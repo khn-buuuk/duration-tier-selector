@@ -24,29 +24,24 @@ import { toast } from "sonner";
 import { DurationType, validateNextTier, getAvailableUnits } from "@/utils/duration";
 import { PlusCircle, Trash2 } from "lucide-react";
 
-interface Tier {
-  duration: number;
-  unit: DurationType;
-  cost: number;
-}
-
 const TierSchema = z.object({
   tiers: z.array(z.object({
     duration: z.number().min(1, "Duration must be greater than 0"),
     unit: z.enum(["days", "months", "years"]),
     cost: z.number().min(0, "Cost must be non-negative"),
   }))
-}).refine((data) => {
+}).superRefine((data, ctx) => {
   for (let i = 0; i < data.tiers.length - 1; i++) {
     const current = data.tiers[i];
     const next = data.tiers[i + 1];
     if (!validateNextTier(current.duration, current.unit, next.duration, next.unit)) {
-      return false;
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Each tier must have a longer duration than the previous tier",
+        path: [`tiers.${i + 1}`]
+      });
     }
   }
-  return true;
-}, {
-  message: "Each tier must have a longer duration than the previous tier",
 });
 
 const DurationTierForm = () => {
