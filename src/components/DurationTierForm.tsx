@@ -50,6 +50,7 @@ const DurationTierForm = () => {
     defaultValues: {
       tiers: [{ duration: 7, unit: "days" as DurationType, cost: 20 }],
     },
+    mode: "onChange"
   });
 
   const { fields, append, remove } = useFieldArray({
@@ -58,8 +59,17 @@ const DurationTierForm = () => {
   });
 
   const onSubmit = (data: z.infer<typeof TierSchema>) => {
+    if (form.formState.errors.tiers) {
+      toast.error("Please fix the validation errors before saving");
+      return;
+    }
     console.log(data);
     toast.success("Tiers saved successfully!");
+  };
+
+  const onError = (errors: any) => {
+    console.log('Form errors:', errors);
+    toast.error("Please check the form for errors");
   };
 
   return (
@@ -70,85 +80,92 @@ const DurationTierForm = () => {
       </div>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={form.handleSubmit(onSubmit, onError)} className="space-y-6">
           <div className="space-y-4">
             {fields.map((field, index) => {
               const prevUnit = index > 0 ? form.getValues(`tiers.${index - 1}.unit`) : undefined;
               const availableUnits = getAvailableUnits(prevUnit as DurationType);
 
               return (
-                <div key={field.id} className="flex items-end gap-4 p-4 rounded-lg border bg-card">
-                  <FormField
-                    control={form.control}
-                    name={`tiers.${index}.duration`}
-                    render={({ field }) => (
-                      <FormItem className="flex-1">
-                        <FormLabel>Duration</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            {...field}
-                            onChange={(e) => field.onChange(Number(e.target.value))}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name={`tiers.${index}.unit`}
-                    render={({ field }) => (
-                      <FormItem className="flex-1">
-                        <FormLabel>Unit</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                <div key={field.id} className="flex flex-col gap-4 p-4 rounded-lg border bg-card">
+                  <div className="flex items-end gap-4">
+                    <FormField
+                      control={form.control}
+                      name={`tiers.${index}.duration`}
+                      render={({ field }) => (
+                        <FormItem className="flex-1">
+                          <FormLabel>Duration</FormLabel>
                           <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select unit" />
-                            </SelectTrigger>
+                            <Input
+                              type="number"
+                              {...field}
+                              onChange={(e) => field.onChange(Number(e.target.value))}
+                            />
                           </FormControl>
-                          <SelectContent>
-                            {availableUnits.map((unit) => (
-                              <SelectItem key={unit} value={unit}>
-                                {unit.charAt(0).toUpperCase() + unit.slice(1)}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                  <FormField
-                    control={form.control}
-                    name={`tiers.${index}.cost`}
-                    render={({ field }) => (
-                      <FormItem className="flex-1">
-                        <FormLabel>Cost ($)</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            {...field}
-                            onChange={(e) => field.onChange(Number(e.target.value))}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                    <FormField
+                      control={form.control}
+                      name={`tiers.${index}.unit`}
+                      render={({ field }) => (
+                        <FormItem className="flex-1">
+                          <FormLabel>Unit</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select unit" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {availableUnits.map((unit) => (
+                                <SelectItem key={unit} value={unit}>
+                                  {unit.charAt(0).toUpperCase() + unit.slice(1)}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                  {index > 0 && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => remove(index)}
-                      className="self-end"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <FormField
+                      control={form.control}
+                      name={`tiers.${index}.cost`}
+                      render={({ field }) => (
+                        <FormItem className="flex-1">
+                          <FormLabel>Cost ($)</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              {...field}
+                              onChange={(e) => field.onChange(Number(e.target.value))}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {index > 0 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => remove(index)}
+                        className="self-end"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                  {form.formState.errors.tiers?.[index] && (
+                    <p className="text-sm font-medium text-destructive">
+                      {form.formState.errors.tiers[index]?.message}
+                    </p>
                   )}
                 </div>
               );
